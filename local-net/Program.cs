@@ -1,10 +1,16 @@
-﻿namespace LocalNetNamespace
+﻿using static Cli;
+
+namespace LocalNetNamespace
 {
-    class LocalNet
+    public class LocalNet
     {
         static void Main(string[] args)
         {
-            System.Console.WriteLine("Hello World!");
+            Server interceptorServer = new Server();
+
+            Cli.PrintHelpMessage();
+
+            interceptorServer.Start();
         }
     }
 }
