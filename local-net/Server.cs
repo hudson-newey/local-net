@@ -101,6 +101,18 @@ public class Server
     {
         byte[] imageContent = { };
 
+        Console.WriteLine($"Received request for image {uri}");
+
+        string imageFileExtension = this.ImageExtension(uri);
+        string queryKey = this.UriToSearchKey(uri);
+        string localPath = this.CachePath(queryKey) + imageFileExtension;
+
+        if (Util.FileExists(localPath))
+        {
+            Console.WriteLine($"Using cache for image {uri}");
+            return Util.ReadFileBytes(localPath);
+        }
+
         using (WebClient client = new WebClient())
         {
             try
@@ -169,7 +181,7 @@ public class Server
         Util.WriteToFile(localPath, content);
     }
 
-    private void SaveImageToCache(string uri, byte[] content)
+    private string ImageExtension(string uri)
     {
         string fileExtension = ".png";
 
@@ -190,6 +202,12 @@ public class Server
             fileExtension = ".ico";
         }
 
+        return fileExtension;
+    }
+
+    private void SaveImageToCache(string uri, byte[] content)
+    {
+        string fileExtension = this.ImageExtension(uri);
         string key = this.UriToSearchKey(uri);
         string cachePathKey = this.CachePath(key) + fileExtension;
         Util.WriteImageToFile(cachePathKey, content);

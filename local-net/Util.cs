@@ -9,6 +9,11 @@ static class Util
         return File.ReadAllText(@$"{filePath}");
     }
 
+    public static byte[] ReadFileBytes(string filePath)
+    {
+        return File.ReadAllBytes(filePath);
+    }
+
     public static void WriteToFile(string filePath, string content)
     {
         File.WriteAllText(filePath, content);
