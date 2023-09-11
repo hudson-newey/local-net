@@ -1,4 +1,5 @@
 using System.IO;
+using System;
 
 
 static class Util
@@ -11,6 +12,18 @@ static class Util
     public static void WriteToFile(string filePath, string content)
     {
         File.WriteAllText(filePath, content);
+    }
+
+    public static void WriteImageToFile(string filePath, byte[] content)
+    {
+        try
+        {
+            File.WriteAllBytes(filePath, content);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error writing the image: {ex.Message}");
+        }
     }
 
     public static bool FileExists(string filePath)

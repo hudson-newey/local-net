@@ -51,7 +51,7 @@ public class Server
             HttpListenerRequest req = context.Request;
 
             string query = this.ExtractQueryFromUrl(req.Url.ToString());
-            query = this.createUrl(query);
+            query = this.CreateUrl(query);
 
             using HttpListenerResponse resp = context.Response;
 
@@ -68,21 +68,56 @@ public class Server
             }
             else
             {
-                string responseMimeType = this.mimeType(query);
+                string responseMimeType = this.MimeType(query);
 
                 resp.Headers.Set("Content-Type", responseMimeType);
                 Console.WriteLine(Environment.NewLine);
                 Console.WriteLine($"With query {query}");
 
-                string responseContent = this.FetchWebsiteContent(query);
+                if (this.IsImage(query))
+                {
+                    byte[] buffer = this.FetchImageContent(query);
 
-                byte[] buffer = Encoding.UTF8.GetBytes(responseContent);
-                resp.ContentLength64 = buffer.Length;
+                    resp.ContentLength64 = buffer.Length;
 
-                using Stream ros = resp.OutputStream;
-                ros.Write(buffer, 0, buffer.Length);
+                    using Stream ros = resp.OutputStream;
+                    ros.Write(buffer, 0, buffer.Length);
+                }
+                else
+                {
+                    string responseContent = this.FetchWebsiteContent(query);
+
+                    byte[] buffer = Encoding.UTF8.GetBytes(responseContent);
+                    resp.ContentLength64 = buffer.Length;
+
+                    using Stream ros = resp.OutputStream;
+                    ros.Write(buffer, 0, buffer.Length);
+                }
             }
         }
+    }
+
+    private byte[] FetchImageContent(string uri)
+    {
+        byte[] imageContent = { };
+
+        using (WebClient client = new WebClient())
+        {
+            try
+            {
+                Console.WriteLine($"Fetching remote image content for {uri}");
+                imageContent = client.DownloadData(uri);
+            }
+            catch (System.Exception e)
+            {
+                Console.WriteLine("Error: Fetching image remote content");
+                Console.WriteLine(e);
+            }
+        }
+
+        this.SaveImageToCache(uri, imageContent);
+
+        return imageContent;
     }
 
     private string FetchWebsiteContent(string uri)
@@ -104,12 +139,15 @@ public class Server
         }
 
         string htmlContent = "";
+
         using (WebClient client = new WebClient())
         {
             try
             {
                 Console.WriteLine($"Fetching remote content for {uri}");
+
                 htmlContent = client.DownloadString(uri);
+                htmlContent = this.ReplaceLinks(uri, htmlContent);
             }
             catch (System.Exception e)
             {
@@ -117,8 +155,6 @@ public class Server
                 Console.WriteLine(e);
             }
         }
-
-        htmlContent = this.ReplaceLinks(uri, htmlContent);
 
         this.SaveContentToCache(uri, htmlContent);
 
@@ -131,6 +167,32 @@ public class Server
         string localPath = this.CachePath(key);
 
         Util.WriteToFile(localPath, content);
+    }
+
+    private void SaveImageToCache(string uri, byte[] content)
+    {
+        string fileExtension = ".png";
+
+        if (uri.EndsWith(".jpg"))
+        {
+            fileExtension = ".jpg";
+        }
+        else if (uri.EndsWith(".jpeg"))
+        {
+            fileExtension = ".jpeg";
+        }
+        else if (uri.EndsWith(".gif"))
+        {
+            fileExtension = ".gif";
+        }
+        else if (uri.EndsWith(".ico"))
+        {
+            fileExtension = ".ico";
+        }
+
+        string key = this.UriToSearchKey(uri);
+        string cachePathKey = this.CachePath(key) + fileExtension;
+        Util.WriteImageToFile(cachePathKey, content);
     }
 
     private bool IsSearchTerm(string requestString)
@@ -178,7 +240,7 @@ public class Server
         {
             bool isBasePath = item.StartsWith("/");
 
-            if (!this.isInterceptorPath(item))
+            if (!this.isInterceptorPath(item) && !this.IsAbsolutePath(item))
             {
                 if (isBasePath)
                 {
@@ -193,12 +255,17 @@ public class Server
                     resultContent = resultContent.Replace($"href=\"{item}\"", $"href={this.interceptorPath() + urlPath + newItem}\"");
                 }
             }
+            else if (this.IsAbsolutePath(item))
+            {
+                resultContent = resultContent.Replace($"src=\"{item}\"", $"src=\"{this.interceptorPath() + item}\"");
+                resultContent = resultContent.Replace($"href=\"{item}\"", $"href=\"{this.interceptorPath() + item}\"");
+            }
         }
 
         return resultContent;
     }
 
-    private bool isAbsolutePath(string url)
+    private bool IsAbsolutePath(string url)
     {
         return url.Contains("://");
     }
@@ -246,12 +313,19 @@ public class Server
     }
 
     // some absolute urls do not use http at the start
-    private string createUrl(string url)
+    private string CreateUrl(string url)
     {
         string resultUrl = url;
         resultUrl = resultUrl.Replace("\"", "");
 
-        if (!this.isAbsolutePath(resultUrl) && (resultUrl.Contains(".com") || resultUrl.Contains(".net") || resultUrl.Contains(".org")))
+        if (!this.IsAbsolutePath(resultUrl) &&
+            (
+                resultUrl.Contains(".com") ||
+                resultUrl.Contains(".net") ||
+                resultUrl.Contains(".org") ||
+                resultUrl.Contains(".io")
+            )
+        )
         {
             return "http://" + resultUrl;
         }
@@ -259,7 +333,7 @@ public class Server
         return resultUrl;
     }
 
-    private string mimeType(string url)
+    private string MimeType(string url)
     {
         string mimeType = "text/html";
 
@@ -274,5 +348,10 @@ public class Server
         }
 
         return mimeType;
+    }
+
+    private bool IsImage(string url)
+    {
+        return url.EndsWith(".png") || url.EndsWith(".jpg") || url.EndsWith(".jpeg") || url.EndsWith(".gif") || url.EndsWith(".ico");
     }
 }
