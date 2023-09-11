@@ -2,18 +2,34 @@ using LocalNetNamespace;
 using System.Net;
 using System.Text;
 
+using HtmlAgilityPack;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
 using static Util;
 
 public class Server
 {
     public int serverPort = 8080;
     public string serverUrl = "localhost";
-    public string searchEngine = "https://www.google.com/?q=";
+    public string searchEngine = "https://html.duckduckgo.com/html/?q=";
     public string localCachePath = "./.cache/";
     public string queryParameter = "?q=";
+    public string adminConsoleSubPath = "/admin";
 
     public Server()
     {
+    }
+
+    public string interceptorPath()
+    {
+        return $"http://{this.serverUrl}:{this.serverPort}/{this.queryParameter}";
+    }
+
+    public string adminConsolePath()
+    {
+        return $"http://{this.serverUrl}:{this.serverPort}{this.adminConsoleSubPath}";
     }
 
     public void Start()
@@ -34,7 +50,7 @@ public class Server
             HttpListenerContext context = listener.GetContext();
             HttpListenerRequest req = context.Request;
 
-            string query = this.extractQueryFromUrl(req.Url.ToString());
+            string query = this.ExtractQueryFromUrl(req.Url.ToString());
 
             using HttpListenerResponse resp = context.Response;
 
@@ -87,6 +103,8 @@ public class Server
         string htmlContent = "";
         using (WebClient client = new WebClient())
         {
+            Console.WriteLine($"Fetching remote content for {uri}");
+
             try
             {
                 htmlContent = client.DownloadString(uri);
@@ -96,6 +114,8 @@ public class Server
                 Console.WriteLine("Error: Fetching remote content");
             }
         }
+
+        htmlContent = this.ReplaceLinks(uri, htmlContent);
 
         this.SaveContentToCache(uri, htmlContent);
 
@@ -132,7 +152,7 @@ public class Server
         return $"{this.localCachePath}{key}.html";
     }
 
-    private string extractQueryFromUrl(string url)
+    private string ExtractQueryFromUrl(string url)
     {
         int indexOfQueryParameter = url.IndexOf(this.queryParameter) + this.queryParameter.Length;
 
@@ -142,5 +162,83 @@ public class Server
         }
 
         return url.Substring(indexOfQueryParameter, url.Length - indexOfQueryParameter);
+    }
+
+    private string ReplaceLinks(string urlPath, string contents)
+    {
+        string resultContent = contents;
+        string baseUrl = this.ExtractBaseUrl(urlPath);
+
+        List<string> htmlRemoteElements = this.ExtractRemoteAttributes(contents);
+
+        foreach (string item in htmlRemoteElements)
+        {
+            bool isBasePath = item.StartsWith("/");
+
+            if (!this.isInterceptorPath(item))
+            {
+                if (isBasePath)
+                {
+                    resultContent = resultContent.Replace($"src=\"{item}\"", $"src={this.interceptorPath() + baseUrl + item}\"");
+                    resultContent = resultContent.Replace($"href=\"{item}\"", $"href={this.interceptorPath() + baseUrl + item}\"");
+                }
+                else
+                {
+                    // this is not needed for the interceptor
+                    string newItem = item.Replace("./", "");
+                    resultContent = resultContent.Replace($"src=\"{item}\"", $"src={this.interceptorPath() + urlPath + newItem}\"");
+                    resultContent = resultContent.Replace($"href=\"{item}\"", $"href={this.interceptorPath() + urlPath + newItem}\"");
+                }
+            }
+        }
+
+        return resultContent;
+    }
+
+    private bool isAbsolutePath(string url)
+    {
+        return url.Contains("://");
+    }
+
+    private List<string> ExtractRemoteAttributes(string html)
+    {
+        List<string> result = new List<string>();
+
+        // Load the HTML document using HtmlAgilityPack
+        var doc = new HtmlDocument();
+        doc.LoadHtml(html);
+
+        // Select all elements with src or href attributes
+        var elementsWithAttributes = doc.DocumentNode.Descendants()
+            .Where(node => node.Attributes["src"] != null || node.Attributes["href"] != null);
+
+        // Extract and add the values of src and href attributes to the result list
+        foreach (var element in elementsWithAttributes)
+        {
+            if (element.Attributes["src"] != null)
+            {
+                string srcValue = element.Attributes["src"].Value;
+                result.Add(srcValue);
+            }
+
+            if (element.Attributes["href"] != null)
+            {
+                string hrefValue = element.Attributes["href"].Value;
+                result.Add(hrefValue);
+            }
+        }
+
+        return result;
+    }
+
+    private string ExtractBaseUrl(string url)
+    {
+        Uri uri = new Uri(url);
+        return uri.Host;
+    }
+
+    private bool isInterceptorPath(string url)
+    {
+        return url.Contains("localhost:8080") || url == "";
     }
 }
