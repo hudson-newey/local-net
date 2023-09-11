@@ -13,7 +13,7 @@ public class Server
 {
     public int serverPort = 8080;
     public string serverUrl = "localhost";
-    public string searchEngine = "https://html.duckduckgo.com/html/?q=";
+    public string searchEngine = "https://search.brave.com/?q=";
     public string localCachePath = "./.cache/";
     public string queryParameter = "?q=";
     public string adminConsoleSubPath = "/admin";
@@ -51,6 +51,7 @@ public class Server
             HttpListenerRequest req = context.Request;
 
             string query = this.ExtractQueryFromUrl(req.Url.ToString());
+            query = this.createUrl(query);
 
             using HttpListenerResponse resp = context.Response;
 
@@ -103,15 +104,15 @@ public class Server
         string htmlContent = "";
         using (WebClient client = new WebClient())
         {
-            Console.WriteLine($"Fetching remote content for {uri}");
-
             try
             {
+                Console.WriteLine($"Fetching remote content for {uri}");
                 htmlContent = client.DownloadString(uri);
             }
-            catch (System.Exception)
+            catch (System.Exception e)
             {
                 Console.WriteLine("Error: Fetching remote content");
+                Console.WriteLine(e);
             }
         }
 
@@ -240,5 +241,19 @@ public class Server
     private bool isInterceptorPath(string url)
     {
         return url.Contains("localhost:8080") || url == "";
+    }
+
+    // some absolute urls do not use http at the start
+    private string createUrl(string url)
+    {
+        string resultUrl = url;
+        resultUrl = resultUrl.Replace("\"", "");
+
+        if (!this.isAbsolutePath(resultUrl) && (resultUrl.Contains(".com") || resultUrl.Contains(".net") || resultUrl.Contains(".org")))
+        {
+            return "http://" + resultUrl;
+        }
+
+        return resultUrl;
     }
 }
