@@ -13,7 +13,7 @@ public class Server
 {
     public int serverPort = 8080;
     public string serverUrl = "localhost";
-    public string searchEngine = "https://search.brave.com/?q=";
+    public string searchEngine = "https://html.duckduckgo.com/html/?q=";
     public string localCachePath = "./.cache/";
     public string queryParameter = "?q=";
     public string adminConsoleSubPath = "/admin";
@@ -68,7 +68,9 @@ public class Server
             }
             else
             {
-                resp.Headers.Set("Content-Type", "text/html");
+                string responseMimeType = this.mimeType(query);
+
+                resp.Headers.Set("Content-Type", responseMimeType);
                 Console.WriteLine(Environment.NewLine);
                 Console.WriteLine($"With query {query}");
 
@@ -141,10 +143,10 @@ public class Server
     {
         key = key
             .Replace(":", "")
-            .Replace("/", "s")
-            .Replace("?", "q")
-            .Replace("=", "e")
-            .Replace(".", "d");
+            .Replace("/", "")
+            .Replace("?", "")
+            .Replace("=", "")
+            .Replace(".", "");
         return key;
     }
 
@@ -255,5 +257,22 @@ public class Server
         }
 
         return resultUrl;
+    }
+
+    private string mimeType(string url)
+    {
+        string mimeType = "text/html";
+
+        if (url.EndsWith(".css"))
+        {
+            mimeType = "text/css";
+        }
+
+        if (url.EndsWith(".js"))
+        {
+            mimeType = "text/javascript";
+        }
+
+        return mimeType;
     }
 }
