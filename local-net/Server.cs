@@ -17,7 +17,7 @@ public class Server
     public string serverUrl = "localhost";
     public string searchEngine = "https://html.duckduckgo.com/html/?q=";
     public string localCachePath = "./.cache/";
-    public string queryParameter = "?q=";
+    public string queryParameter = "?interceptor-url=";
 
     public Server()
     {

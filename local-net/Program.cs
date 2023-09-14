@@ -8,7 +8,7 @@ namespace LocalNetNamespace
         {
             Server interceptorServer = new Server();
 
-            Cli.PrintHelpMessage();
+            Cli.PrintHelpMessage(interceptorServer);
 
             interceptorServer.Start();
         }
