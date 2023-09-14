@@ -270,6 +270,7 @@ public class Server
     {
         string resultContent = contents;
         string baseUrl = this.ExtractBaseUrl(urlPath);
+        string subPath = this.ExtractSubPath(urlPath);
 
         List<string> htmlRemoteElements = this.ExtractRemoteAttributes(contents);
 
@@ -288,8 +289,9 @@ public class Server
                 {
                     // this is not needed for the interceptor
                     string newItem = item.Replace("./", "");
-                    resultContent = resultContent.Replace($"src=\"{item}\"", $"src=\"{this.interceptorPath() + urlPath + newItem}\"");
-                    resultContent = resultContent.Replace($"href=\"{item}\"", $"href=\"{this.interceptorPath() + urlPath + newItem}\"");
+                    resultContent = resultContent.Replace($"src=\"{item}\"", $"src=\"{this.interceptorPath() + baseUrl + subPath + newItem}\"");
+                    resultContent = resultContent.Replace($"href=\"{item}\"", $"href=\"{this.interceptorPath() + baseUrl + subPath + newItem}\"");
+                    Console.WriteLine("sjkhasjkfhj " +  item + "  " + subPath);
                 }
             }
             else if (this.IsAbsolutePath(item))
@@ -304,7 +306,7 @@ public class Server
 
     private bool IsAbsolutePath(string url)
     {
-        return url.Contains("://");
+        return url.Contains("//");
     }
 
     private List<string> ExtractRemoteAttributes(string html)
@@ -343,6 +345,28 @@ public class Server
         Uri uri = new Uri(url);
         string uriHost = uri.Host;
         return uriHost;
+    }
+
+    private string ExtractSubPath(string url)
+    {
+        Uri uri = new Uri(url);
+        string uriPath = uri.AbsolutePath;
+        string[] uriPathParts = uriPath.Split("/");
+        string lastPathPart = uriPathParts[uriPathParts.Length - 1];
+
+        if (lastPathPart.Contains("."))
+        {
+            uriPathParts = uriPathParts.Take(uriPathParts.Length - 1).ToArray();
+        }
+
+        string result = string.Join("/", uriPathParts);
+
+        if (!result.EndsWith("/"))
+        {
+            result = result + "/";
+        }
+
+        return result;
     }
 
     private bool isInterceptorPath(string url)
@@ -410,9 +434,21 @@ public class Server
 
         bool hasTld = topLevelDomains.Any(tld => resultUrl.EndsWith(tld));
 
+        if (resultUrl == "")
+        {
+            return "";
+        }
+
         if (!this.IsAbsolutePath(resultUrl))
         {
             return "http://" + resultUrl;
+        }
+        else
+        {
+            if (resultUrl.StartsWith("//"))
+            {
+                resultUrl = "http:" + resultUrl;
+            }
         }
 
         return resultUrl;
@@ -422,19 +458,38 @@ public class Server
     {
         string mimeType = "text/html";
 
-        if (url.Contains(".css"))
+        switch (Path.GetExtension(url))
         {
-            mimeType = "text/css";
-        }
-
-        if (url.Contains(".js"))
-        {
-            mimeType = "text/javascript";
-        }
-
-        if (url.Contains(".woff2"))
-        {
-            mimeType = "font/woff2";
+            case ".png":
+                mimeType = "image/png";
+                break;
+            case ".jpg":
+                mimeType = "image/jpg";
+                break;
+            case ".jpeg":
+                mimeType = "image/jpeg";
+                break;
+            case ".gif":
+                mimeType = "image/gif";
+                break;
+            case ".ico":
+                mimeType = "image/ico";
+                break;
+            case ".css":
+                mimeType = "text/css";
+                break;
+            case ".js":
+                mimeType = "text/javascript";
+                break;
+            case ".woff2":
+                mimeType = "font/woff2";
+                break;
+            case ".woff":
+                mimeType = "font/woff";
+                break;
+            case ".ttf":
+                mimeType = "font/ttf";
+                break;
         }
 
         return mimeType;
