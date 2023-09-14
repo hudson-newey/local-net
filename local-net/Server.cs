@@ -354,12 +354,12 @@ public class Server
         string[] uriPathParts = uriPath.Split("/");
         string lastPathPart = uriPathParts[uriPathParts.Length - 1];
 
-        if (lastPathPart.Contains("."))
-        {
-            uriPathParts = uriPathParts.Take(uriPathParts.Length - 1).ToArray();
-        }
+        // remove the last part of the path
+        uriPathParts = uriPathParts.Take(uriPathParts.Count() - 1).ToArray();
 
         string result = string.Join("/", uriPathParts);
+
+        Console.WriteLine(result);
 
         if (!result.EndsWith("/"))
         {
