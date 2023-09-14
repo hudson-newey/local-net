@@ -1,4 +1,5 @@
 using LocalNetNamespace;
+
 using System.Net;
 using System.Text;
 
@@ -7,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+using static AdminConsole;
 using static Util;
 
 public class Server
@@ -16,7 +18,6 @@ public class Server
     public string searchEngine = "https://html.duckduckgo.com/html/?q=";
     public string localCachePath = "./.cache/";
     public string queryParameter = "?q=";
-    public string adminConsoleSubPath = "/admin";
 
     public Server()
     {
@@ -25,11 +26,6 @@ public class Server
     public string interceptorPath()
     {
         return $"http://{this.serverUrl}:{this.serverPort}/{this.queryParameter}";
-    }
-
-    public string adminConsolePath()
-    {
-        return $"http://{this.serverUrl}:{this.serverPort}{this.adminConsoleSubPath}";
     }
 
     public void Start()
@@ -54,6 +50,18 @@ public class Server
             query = this.CreateUrl(query);
 
             using HttpListenerResponse resp = context.Response;
+
+            string requestPath = req.Url.AbsolutePath;
+            if (requestPath == AdminConsole.adminConsoleSubpath)
+            {
+                resp.Headers.Set("Content-Type", "text/html");
+                byte[] buffer = Encoding.UTF8.GetBytes(AdminConsole.render());
+                resp.ContentLength64 = buffer.Length;
+
+                using Stream ros = resp.OutputStream;
+                ros.Write(buffer, 0, buffer.Length);
+                continue;
+            }
 
             // requests without a query
             if (query == "")
@@ -262,15 +270,15 @@ public class Server
             {
                 if (isBasePath)
                 {
-                    resultContent = resultContent.Replace($"src=\"{item}\"", $"src={this.interceptorPath() + baseUrl + item}\"");
-                    resultContent = resultContent.Replace($"href=\"{item}\"", $"href={this.interceptorPath() + baseUrl + item}\"");
+                    resultContent = resultContent.Replace($"src=\"{item}\"", $"src=\"{this.interceptorPath() + baseUrl + item}\"");
+                    resultContent = resultContent.Replace($"href=\"{item}\"", $"href=\"{this.interceptorPath() + baseUrl + item}\"");
                 }
                 else
                 {
                     // this is not needed for the interceptor
                     string newItem = item.Replace("./", "");
-                    resultContent = resultContent.Replace($"src=\"{item}\"", $"src={this.interceptorPath() + urlPath + newItem}\"");
-                    resultContent = resultContent.Replace($"href=\"{item}\"", $"href={this.interceptorPath() + urlPath + newItem}\"");
+                    resultContent = resultContent.Replace($"src=\"{item}\"", $"src=\"{this.interceptorPath() + urlPath + newItem}\"");
+                    resultContent = resultContent.Replace($"href=\"{item}\"", $"href=\"{this.interceptorPath() + urlPath + newItem}\"");
                 }
             }
             else if (this.IsAbsolutePath(item))
@@ -355,14 +363,19 @@ public class Server
     {
         string mimeType = "text/html";
 
-        if (url.EndsWith(".css"))
+        if (url.Contains(".css"))
         {
             mimeType = "text/css";
         }
 
-        if (url.EndsWith(".js"))
+        if (url.Contains(".js"))
         {
             mimeType = "text/javascript";
+        }
+
+        if (url.Contains(".woff2"))
+        {
+            mimeType = "font/woff2";
         }
 
         return mimeType;

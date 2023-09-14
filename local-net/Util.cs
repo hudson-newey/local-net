@@ -1,7 +1,6 @@
 using System.IO;
 using System;
 
-
 static class Util
 {
     public static string ReadFile(string filePath)
