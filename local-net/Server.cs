@@ -52,6 +52,8 @@ public class Server
             using HttpListenerResponse resp = context.Response;
 
             string requestPath = req.Url.AbsolutePath;
+
+            // handle requests for the admin console
             if (requestPath == AdminConsole.adminConsoleSubpath)
             {
                 resp.Headers.Set("Content-Type", "text/html");
@@ -66,6 +68,18 @@ public class Server
             // requests without a query
             if (query == "")
             {
+                // handle requests for the root page
+                if (requestPath == RootPage.rootPageSubpath)
+                {
+                    resp.Headers.Set("Content-Type", "text/html");
+                    byte[] buffer = Encoding.UTF8.GetBytes(RootPage.render());
+                    resp.ContentLength64 = buffer.Length;
+
+                    using Stream ros = resp.OutputStream;
+                    ros.Write(buffer, 0, buffer.Length);
+                    continue;
+                }
+
                 resp.StatusCode = 500;
                 resp.Close();
             }
@@ -327,7 +341,8 @@ public class Server
     private string ExtractBaseUrl(string url)
     {
         Uri uri = new Uri(url);
-        return uri.Host;
+        string uriHost = uri.Host;
+        return uriHost;
     }
 
     private bool isInterceptorPath(string url)
@@ -341,14 +356,61 @@ public class Server
         string resultUrl = url;
         resultUrl = resultUrl.Replace("\"", "");
 
-        if (!this.IsAbsolutePath(resultUrl) &&
-            (
-                resultUrl.Contains(".com") ||
-                resultUrl.Contains(".net") ||
-                resultUrl.Contains(".org") ||
-                resultUrl.Contains(".io")
-            )
-        )
+        string[] topLevelDomains = {
+            ".com",
+            ".net",
+            ".org",
+            ".io",
+            ".de",
+            ".co.uk",
+            ".co",
+            ".us",
+            ".ca",
+            ".biz",
+            ".info",
+            ".me",
+            ".mobi",
+            ".tv",
+            ".ws",
+            ".name",
+            ".cc",
+            ".jp",
+            ".be",
+            ".at",
+            ".au",
+            ".in",
+            ".uk",
+            ".tk",
+            ".nz",
+            ".ru",
+            ".fr",
+            ".ch",
+            ".it",
+            ".nl",
+            ".se",
+            ".no",
+            ".es",
+            ".mil",
+            ".edu",
+            ".gov",
+            ".kr",
+            ".cn",
+            ".tw",
+            ".sg",
+            ".hk",
+            ".my",
+            ".xyz",
+            ".top",
+            ".club",
+            ".vip",
+            ".win",
+            ".site",
+            ".bid",
+        };
+
+        bool hasTld = topLevelDomains.Any(tld => resultUrl.EndsWith(tld));
+
+        if (!this.IsAbsolutePath(resultUrl))
         {
             return "http://" + resultUrl;
         }

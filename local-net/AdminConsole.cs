@@ -6,7 +6,7 @@ static class AdminConsole
 
     public static string render()
     {
-        string adminConsoleHtml = ReadFile(@$"local-net/static/index.html");
+        string adminConsoleHtml = ReadFile(@$"local-net/static/admin-console.html");
         return adminConsoleHtml;
     }
 }
