@@ -66,13 +66,8 @@ public class Server
             // requests without a query
             if (query == "")
             {
-                resp.Headers.Set("Content-Type", "text/plain");
-                string respData = "Error 500: Internal Server Error";
-                byte[] failedBuffer = Encoding.UTF8.GetBytes(respData);
-                resp.ContentLength64 = failedBuffer.Length;
-
-                using Stream failedRos = resp.OutputStream;
-                failedRos.Write(failedBuffer, 0, failedBuffer.Length);
+                resp.StatusCode = 500;
+                resp.Close();
             }
             else
             {
@@ -245,12 +240,14 @@ public class Server
 
     private string ExtractQueryFromUrl(string url)
     {
-        int indexOfQueryParameter = url.IndexOf(this.queryParameter) + this.queryParameter.Length;
+        int indexOfQueryParameter = url.IndexOf(this.queryParameter);
 
         if (indexOfQueryParameter == -1)
         {
             return "";
         }
+
+        indexOfQueryParameter += this.queryParameter.Length;
 
         return url.Substring(indexOfQueryParameter, url.Length - indexOfQueryParameter);
     }
