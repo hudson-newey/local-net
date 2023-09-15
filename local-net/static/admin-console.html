@@ -4,12 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Local Net - Admin Console</title>
-    <link rel="stylesheet" href="https://unpkg.com/tailwindcss@2.0.1/dist/tailwind-dark.min.css">
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/tailwindcss@2.0.1/dist/tailwind-dark.min.css"
+    />
   </head>
 
   <body class="bg-gray-800">
     <div class="m-auto p-5 w-1/2 text-gray-50">
-        <h1 class="text-4xl">Admin Console</h1>
+      <h1 class="text-4xl">Admin Console</h1>
+
+      <span>Total Requests: {{ totalRequestsCount }}</span><br />
+      <span>Cached Requests: {{ cachedRequestsCount }}</span><br />
+      <span>Cached Requests Percentage: {{ cachedRequestsPercentage }}%</span><br>
+      <span>Cached Webpages: {{ cachedUrlsCount }}</span><br>
     </div>
   </body>
 </html>

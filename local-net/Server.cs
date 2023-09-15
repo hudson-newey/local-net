@@ -10,6 +10,7 @@ using System.Linq;
 
 using static AdminConsole;
 using static Util;
+using static Statistics;
 
 public class Server
 {
@@ -57,7 +58,7 @@ public class Server
             if (requestPath == AdminConsole.adminConsoleSubpath)
             {
                 resp.Headers.Set("Content-Type", "text/html");
-                byte[] buffer = Encoding.UTF8.GetBytes(AdminConsole.render());
+                byte[] buffer = Encoding.UTF8.GetBytes(AdminConsole.render(this));
                 resp.ContentLength64 = buffer.Length;
 
                 using Stream ros = resp.OutputStream;
@@ -85,6 +86,8 @@ public class Server
             }
             else
             {
+                Statistics.totalRequestsCount++;
+
                 string responseMimeType = this.MimeType(query);
 
                 resp.Headers.Set("Content-Type", responseMimeType);
@@ -102,9 +105,9 @@ public class Server
                 }
                 else
                 {
-                    string responseContent = this.FetchWebsiteContent(query);
+                    byte[] responseContent = this.FetchWebsiteContent(query);
 
-                    byte[] buffer = Encoding.UTF8.GetBytes(responseContent);
+                    byte[] buffer = responseContent;
                     resp.ContentLength64 = buffer.Length;
 
                     using Stream ros = resp.OutputStream;
@@ -127,6 +130,9 @@ public class Server
         if (Util.FileExists(localPath))
         {
             Console.WriteLine($"Using cache for image {uri}");
+
+            Statistics.cachedRequestsCount++;
+
             return Util.ReadFileBytes(localPath);
         }
 
@@ -149,7 +155,7 @@ public class Server
         return imageContent;
     }
 
-    private string FetchWebsiteContent(string uri)
+    private byte[] FetchWebsiteContent(string uri)
     {
         if (this.IsSearchTerm(uri))
         {
@@ -164,10 +170,11 @@ public class Server
         if (Util.FileExists(localPath))
         {
             Console.WriteLine($"Using cache for {uri}");
-            return Util.ReadFile(localPath);
+            Statistics.cachedRequestsCount++;
+            return Util.ReadFileBytes(localPath);
         }
 
-        string htmlContent = "";
+        byte[] htmlContent = { };
 
         using (WebClient client = new WebClient())
         {
@@ -175,8 +182,18 @@ public class Server
             {
                 Console.WriteLine($"Fetching remote content for {uri}");
 
-                htmlContent = client.DownloadString(uri);
-                htmlContent = this.ReplaceLinks(uri, htmlContent);
+                htmlContent = client.DownloadData(uri);
+                if (this.IsImage(uri) || !Util.IsStringValue(htmlContent))
+                {
+                    this.SaveImageToCache(uri, htmlContent);
+                }
+                else
+                {
+                    string htmlString = Encoding.UTF8.GetString(htmlContent);
+                    htmlString = this.ReplaceLinks(uri, htmlString);
+                    htmlContent = Encoding.UTF8.GetBytes(htmlString);
+                    this.SaveContentToCache(uri, htmlString);
+                }
             }
             catch (System.Exception e)
             {
@@ -184,8 +201,6 @@ public class Server
                 Console.WriteLine(e);
             }
         }
-
-        this.SaveContentToCache(uri, htmlContent);
 
         return htmlContent;
     }
@@ -291,7 +306,6 @@ public class Server
                     string newItem = item.Replace("./", "");
                     resultContent = resultContent.Replace($"src=\"{item}\"", $"src=\"{this.interceptorPath() + baseUrl + subPath + newItem}\"");
                     resultContent = resultContent.Replace($"href=\"{item}\"", $"href=\"{this.interceptorPath() + baseUrl + subPath + newItem}\"");
-                    Console.WriteLine("sjkhasjkfhj " +  item + "  " + subPath);
                 }
             }
             else if (this.IsAbsolutePath(item))
@@ -358,8 +372,6 @@ public class Server
         uriPathParts = uriPathParts.Take(uriPathParts.Count() - 1).ToArray();
 
         string result = string.Join("/", uriPathParts);
-
-        Console.WriteLine(result);
 
         if (!result.EndsWith("/"))
         {
@@ -475,6 +487,9 @@ public class Server
             case ".ico":
                 mimeType = "image/ico";
                 break;
+            case ".svg":
+                mimeType = "image/svg+xml";
+                break;
             case ".css":
                 mimeType = "text/css";
                 break;
@@ -497,6 +512,6 @@ public class Server
 
     private bool IsImage(string url)
     {
-        return url.EndsWith(".png") || url.EndsWith(".jpg") || url.EndsWith(".jpeg") || url.EndsWith(".gif") || url.EndsWith(".ico");
+        return url.EndsWith(".png") || url.EndsWith(".jpg") || url.EndsWith(".jpeg") || url.EndsWith(".gif") || url.EndsWith(".ico") || url.EndsWith(".svg");
     }
 }

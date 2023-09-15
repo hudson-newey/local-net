@@ -1,3 +1,5 @@
+using LocalNetNamespace;
+
 using System.IO;
 using System;
 
@@ -41,5 +43,17 @@ static class Util
         {
             Directory.CreateDirectory(path);
         }
+    }
+
+    public static int DirectoryFilesCount(string path)
+    {
+        return Directory.GetFiles(path).Length;
+    }
+
+    // if the data is a binary object, return false
+    // if the data is a string object, return true
+    public static bool IsStringValue(object data)
+    {
+        return true;
     }
 }
