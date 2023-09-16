@@ -19,9 +19,12 @@ public class Server
     public string searchEngine = "https://html.duckduckgo.com/html/?q=";
     public string localCachePath = "./.cache/";
     public string queryParameter = "?interceptor-url=";
+    public string serverLocation = $"http://localhost:8080/";
+    private bool debugMode = false;
 
-    public Server()
+    public Server(bool debugMode = false)
     {
+        this.debugMode = debugMode;
     }
 
     public string interceptorPath()
@@ -36,7 +39,7 @@ public class Server
 
         // start server
         using var listener = new HttpListener();
-        listener.Prefixes.Add("http://localhost:8080/");
+        listener.Prefixes.Add(this.serverLocation);
 
         listener.Start();
 
@@ -124,7 +127,7 @@ public class Server
         Console.WriteLine($"Received request for image {uri}");
 
         string imageFileExtension = this.ImageExtension(uri);
-        string queryKey = this.UriToSearchKey(uri);
+        string queryKey = this.UriToCacheSearchKey(uri);
         string localPath = this.CachePath(queryKey) + imageFileExtension;
 
         if (Util.FileExists(localPath))
@@ -146,7 +149,11 @@ public class Server
             catch (System.Exception e)
             {
                 Console.WriteLine("Error: Fetching image remote content");
-                Console.WriteLine(e);
+
+                if (this.debugMode)
+                {
+                    Console.WriteLine(e);
+                }
             }
         }
 
@@ -162,7 +169,7 @@ public class Server
             uri = searchEngine + uri;
         }
 
-        string queryKey = this.UriToSearchKey(uri);
+        string queryKey = this.UriToCacheSearchKey(uri);
         string localPath = this.CachePath(queryKey);
 
         Console.WriteLine($"Received request for {uri}");
@@ -198,7 +205,11 @@ public class Server
             catch (System.Exception e)
             {
                 Console.WriteLine("Error: Fetching remote content");
-                Console.WriteLine(e);
+
+                if (this.debugMode)
+                {
+                    Console.WriteLine(e);
+                }
             }
         }
 
@@ -207,7 +218,7 @@ public class Server
 
     private void SaveContentToCache(string uri, string content)
     {
-        string key = this.UriToSearchKey(uri);
+        string key = this.UriToCacheSearchKey(uri);
         string localPath = this.CachePath(key);
 
         Util.WriteToFile(localPath, content);
@@ -240,7 +251,7 @@ public class Server
     private void SaveImageToCache(string uri, byte[] content)
     {
         string fileExtension = this.ImageExtension(uri);
-        string key = this.UriToSearchKey(uri);
+        string key = this.UriToCacheSearchKey(uri);
         string cachePathKey = this.CachePath(key) + fileExtension;
         Util.WriteImageToFile(cachePathKey, content);
     }
@@ -251,12 +262,16 @@ public class Server
         return !requestString.Contains("://");
     }
 
-    private string UriToSearchKey(string key)
+    private string UriToCacheSearchKey(string key)
     {
         key = key
+            .Replace("http://", "")
+            .Replace("https://", "")
             .Replace(":", "")
             .Replace("/", "")
+            .Replace("#", "")
             .Replace("?", "")
+            .Replace("&", "")
             .Replace("=", "")
             .Replace(".", "");
         return key;
@@ -320,7 +335,7 @@ public class Server
 
     private bool IsAbsolutePath(string url)
     {
-        return url.StartsWith("//");
+        return url.Contains("//");
     }
 
     private List<string> ExtractRemoteAttributes(string html)
@@ -383,7 +398,7 @@ public class Server
 
     private bool isInterceptorPath(string url)
     {
-        return url.Contains("localhost:8080") || url == "";
+        return url.Contains(this.serverLocation) || url == "";
     }
 
     // some absolute urls do not use http at the start
@@ -460,12 +475,12 @@ public class Server
             return "";
         }
 
-        if (this.IsAbsolutePath(resultUrl))
+        if (resultUrl.StartsWith("//"))
         {
             return "http:" + resultUrl;
         }
 
-        if (hasTld)
+        if (hasTld && this.IsSearchTerm(resultUrl))
         {
             return "http://" + resultUrl;
         }

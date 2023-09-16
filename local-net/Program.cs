@@ -6,7 +6,11 @@ namespace LocalNetNamespace
     {
         static void Main(string[] args)
         {
-            Server interceptorServer = new Server();
+            bool debugMode = args.Contains("--debug");
+
+            Console.WriteLine($"Running in debug mode: {debugMode}");
+
+            Server interceptorServer = new Server(debugMode);
 
             Cli.PrintHelpMessage(interceptorServer);
 
