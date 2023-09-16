@@ -13,8 +13,8 @@ static class AdminConsole
 
         adminConsoleHtml = adminConsoleHtml.Replace("{{ totalRequestsCount }}", Statistics.totalRequestsCount.ToString());
         adminConsoleHtml = adminConsoleHtml.Replace("{{ cachedRequestsCount }}", Statistics.cachedRequestsCount.ToString());
-        adminConsoleHtml = adminConsoleHtml.Replace("{{ cachedRequestsPercentage }}", Statistics.cachedRequestsPercentage().ToString());
-        adminConsoleHtml = adminConsoleHtml.Replace("{{ cachedUrlsCount }}", Statistics.cachedUrlsCount(serverInstance).ToString());
+        adminConsoleHtml = adminConsoleHtml.Replace("{{ CachedRequestsPercentage }}", Statistics.CachedRequestsPercentage().ToString());
+        adminConsoleHtml = adminConsoleHtml.Replace("{{ CachedUrlsCount }}", Statistics.CachedUrlsCount(serverInstance).ToString());
 
         return adminConsoleHtml;
     }

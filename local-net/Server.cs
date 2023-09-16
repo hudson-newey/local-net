@@ -451,7 +451,7 @@ public class Server
             return "";
         }
 
-        if (!this.IsAbsolutePath(resultUrl))
+        if (!this.IsAbsolutePath(resultUrl) && !this.IsSearchTerm(resultUrl))
         {
             return "http://" + resultUrl;
         }

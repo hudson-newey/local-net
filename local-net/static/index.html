@@ -15,11 +15,41 @@
       <h1 class="text-4xl">Local Net</h1>
 
       <div class="m-5">
+        <div>
+          <input id="input-box" class="p-2 text-xl text-gray-900" type="url" />
+          <button class="p-2 text-gray-900 text-xl bg-gray-200">Go</button>
+        </div>
+
+        <div>
+          <a class="text-gray-50" href="/admin">Admin Console</a>
+        </div>
       </div>
-      <form action="/">
-        <input class="p-1 text-gray-900" type="text" name="interceptor-url" />
-        <input class="p-1 text-gray-900" type="submit" />
-      </form>
     </div>
   </body>
+
+  <script type="text/javascript">
+    const inputBox = document.getElementById("input-box");
+    const goButton = document.getElementById("go-button");
+    const baseUrl = "http://localhost:8080/?interceptor-url=";
+
+    function submitQuery() {
+      const url = inputBox.value;
+      const encodedUrl = url;
+      const createdUrl = baseUrl + encodedUrl;
+
+      window.location.href = createdUrl;
+    }
+
+    inputBox.addEventListener("keyup", function (event) {
+      if (event.keyCode === 13) {
+        event.preventDefault();
+        submitQuery();
+      }
+    });
+
+    goButton.addEventListener("click", function (event) {
+      event.preventDefault();
+      submitQuery();
+    });
+  </script>
 </html>
