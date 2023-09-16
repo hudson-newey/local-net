@@ -320,7 +320,7 @@ public class Server
 
     private bool IsAbsolutePath(string url)
     {
-        return url.Contains("//");
+        return url.StartsWith("//");
     }
 
     private List<string> ExtractRemoteAttributes(string html)
@@ -444,23 +444,30 @@ public class Server
             ".bid",
         };
 
-        bool hasTld = topLevelDomains.Any(tld => resultUrl.EndsWith(tld));
+        bool hasTld = false;
+
+        foreach (string tld in topLevelDomains)
+        {
+            if (resultUrl.Contains(tld))
+            {
+                hasTld = true;
+                break;
+            }
+        }
 
         if (resultUrl == "")
         {
             return "";
         }
 
-        if (!this.IsAbsolutePath(resultUrl) && !this.IsSearchTerm(resultUrl))
+        if (this.IsAbsolutePath(resultUrl))
+        {
+            return "http:" + resultUrl;
+        }
+
+        if (hasTld)
         {
             return "http://" + resultUrl;
-        }
-        else
-        {
-            if (resultUrl.StartsWith("//"))
-            {
-                resultUrl = "http:" + resultUrl;
-            }
         }
 
         return resultUrl;
