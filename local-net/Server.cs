@@ -302,6 +302,7 @@ public class Server
         string baseUrl = this.ExtractBaseUrl(urlPath);
         string subPath = this.ExtractSubPath(urlPath);
 
+        // replace links, scripts, images, and remote css stylesheets
         List<string> htmlRemoteElements = this.ExtractRemoteAttributes(contents);
 
         foreach (string item in htmlRemoteElements)
@@ -329,6 +330,9 @@ public class Server
                 resultContent = resultContent.Replace($"href=\"{item}\"", $"href=\"{this.interceptorPath() + item}\"");
             }
         }
+
+        // replace redirect links
+        resultContent = resultContent.Replace("URL=", $"URL={this.interceptorPath()}");
 
         return resultContent;
     }
