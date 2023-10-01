@@ -197,7 +197,11 @@ public class Server
                 else
                 {
                     string htmlString = Encoding.UTF8.GetString(htmlContent);
+
                     htmlString = this.ReplaceLinks(uri, htmlString);
+
+                    htmlString = this.removeTracking(htmlString);
+
                     htmlContent = Encoding.UTF8.GetBytes(htmlString);
                     this.SaveContentToCache(uri, htmlString);
                 }
@@ -305,6 +309,7 @@ public class Server
         // replace links, scripts, images, and remote css stylesheets
         List<string> htmlRemoteElements = this.ExtractRemoteAttributes(contents);
 
+        // HTML
         foreach (string item in htmlRemoteElements)
         {
             bool isBasePath = item.StartsWith("/");
@@ -313,6 +318,7 @@ public class Server
             {
                 if (isBasePath)
                 {
+                    // HTML
                     resultContent = resultContent.Replace($"src=\"{item}\"", $"src=\"{this.interceptorPath() + baseUrl + item}\"");
                     resultContent = resultContent.Replace($"href=\"{item}\"", $"href=\"{this.interceptorPath() + baseUrl + item}\"");
                 }
@@ -320,12 +326,15 @@ public class Server
                 {
                     // this is not needed for the interceptor
                     string newItem = item.Replace("./", "");
+
+                    // HTML
                     resultContent = resultContent.Replace($"src=\"{item}\"", $"src=\"{this.interceptorPath() + baseUrl + subPath + newItem}\"");
                     resultContent = resultContent.Replace($"href=\"{item}\"", $"href=\"{this.interceptorPath() + baseUrl + subPath + newItem}\"");
                 }
             }
             else if (this.IsAbsolutePath(item))
             {
+                // HTML
                 resultContent = resultContent.Replace($"src=\"{item}\"", $"src=\"{this.interceptorPath() + item}\"");
                 resultContent = resultContent.Replace($"href=\"{item}\"", $"href=\"{this.interceptorPath() + item}\"");
             }
@@ -335,6 +344,23 @@ public class Server
         resultContent = resultContent.Replace("URL=", $"URL={this.interceptorPath()}");
 
         return resultContent;
+    }
+
+    private string removeTracking(string content)
+    {
+        string[] trackingSubStrings = {
+            "www.googletagmanager.com/gtm.js?id=",
+            "www.googletagmanager.com/gtag/js?id="
+        };
+
+        foreach (string subString in trackingSubStrings)
+        {
+            Console.WriteLine(subString);
+            content = content.Replace(subString, "localhost:8081/intentionally-broken");
+        }
+
+
+        return content;
     }
 
     private bool IsAbsolutePath(string url)

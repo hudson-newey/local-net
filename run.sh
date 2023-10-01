@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 if [ ! -d ./local-net/bin/Release/ ]; then
     dotnet build -c Release ./local-net/local-net.csproj;

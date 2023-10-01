@@ -8,16 +8,32 @@
       rel="stylesheet"
       href="https://unpkg.com/tailwindcss@2.0.1/dist/tailwind-dark.min.css"
     />
+    <script src="./dist/admin-console.js"></script>
   </head>
 
-  <body class="bg-gray-800">
-    <div class="m-auto p-5 w-1/2 text-gray-50">
-      <h1 class="text-4xl">Admin Console</h1>
+  <body class="bg-gray-800 m-auto p-5 w-1/2 text-gray-50">
+    <h1 class="text-4xl mb-5">Local Net - Admin Console</h1>
+
+    <div class="my-3">
+      <h2 class="text-3xl mb-3">Statistics</h2>
 
       <span>Total Requests: {{ totalRequestsCount }}</span><br />
       <span>Cached Requests: {{ cachedRequestsCount }}</span><br />
       <span>Cached Requests Percentage: {{ CachedRequestsPercentage }}%</span><br>
       <span>Cached Webpages: {{ CachedUrlsCount }}</span><br>
     </div>
+
+    <div class="my-3">
+      <h2 class="text-3xl mb-3">Actions</h2>
+
+      <button class="border border-red-600 rounded p-2 hover:bg-red-500" onclick="wipAlert()">Disable Protection</button>
+    </div>
   </body>
 </html>
+
+<script>
+  function wipAlert(message) {
+    if (message === void 0) { message = "Coming soon! But this action is currently non-functional :("; }
+    alert(message);
+  }
+</script>
