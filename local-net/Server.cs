@@ -348,17 +348,31 @@ public class Server
 
     private string removeTracking(string content)
     {
-        string[] trackingSubStrings = {
-            "www.googletagmanager.com/gtm.js?id=",
-            "www.googletagmanager.com/gtag/js?id="
-        };
+        const string intentionallyBrokenLocation = "localhost:8081/intentionally-broken";
 
-        foreach (string subString in trackingSubStrings)
+        string[] trackingDomains = Util.ReadFileLines("./local-net/blocklists/tracking-domains.txt");
+
+        foreach (string subString in trackingDomains)
         {
-            Console.WriteLine(subString);
-            content = content.Replace(subString, "localhost:8081/intentionally-broken");
+            if (subString == "" || subString.StartsWith("#") || subString == "\n")
+            {
+                continue;
+            }
+
+            content = content.Replace(subString, intentionallyBrokenLocation);
         }
 
+        string[] trackingUrlParameters = Util.ReadFileLines("./local-net/blocklists/tracking-url-parameters.txt");
+
+        foreach (string subString in trackingUrlParameters)
+        {
+            if (subString == "" || subString.StartsWith("#") || subString == "\n")
+            {
+                continue;
+            }
+
+            content = content.Replace(subString, intentionallyBrokenLocation);
+        }
 
         return content;
     }

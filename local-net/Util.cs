@@ -15,6 +15,11 @@ static class Util
         return File.ReadAllBytes(filePath);
     }
 
+    public static string[] ReadFileLines(string filePath)
+    {
+        return File.ReadAllLines(filePath);
+    }
+
     public static void WriteToFile(string filePath, string content)
     {
         File.WriteAllText(filePath, content);
