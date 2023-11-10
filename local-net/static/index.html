@@ -10,18 +10,23 @@
     />
   </head>
 
-  <body class="bg-gray-800">
-    <div class="m-auto p-5 w-1/2 text-gray-50">
-      <h1 class="text-4xl">Local Net</h1>
+  <body>
+    <nav>
+      <div class="flex items-center justify-between flex-wrap bg-gray-900 p-6">
+        <div class="flex items-center flex-shrink-0 text-gray-50 mr-6">
+          <span class="font-semibold text-xl tracking-tight">Local Net</span>
+          <a class="text-xl ml-3 underline" href="/admin">Admin Console</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="m-auto p-5 w-1/2">
+      <h1 class="text-4xl">Local Net Search</h1>
 
       <div class="m-5">
         <div>
-          <input id="input-box" class="p-2 text-xl text-gray-900" type="url" autofocus />
-          <button class="p-2 text-gray-900 text-xl bg-gray-200">Go</button>
-        </div>
-
-        <div>
-          <a class="text-gray-50" href="/admin">Admin Console</a>
+          <input id="input-box" class="p-2 text-xl text-gray-900 border rounded" type="url" autofocus />
+          <button id="go-button" class="p-2 px-4 text-gray-50 text-xl bg-blue-500 hover:bg-blue-600 rounded">Go</button>
         </div>
       </div>
     </div>
